@@ -1,4 +1,5 @@
-﻿using BackgroundServiceMath.Data;
+﻿using System.Threading.Tasks;
+using BackgroundServiceMath.Data;
 using BackgroundServiceMath.DTOs;
 using BackgroundServiceMath.Models;
 using BackgroundServiceMath.Services;
@@ -41,7 +42,7 @@ public class MathQuestionsHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    public void SelectChoice(int answerIndex)
+    public async Task SelectChoice(int answerIndex)
     {
         _matchBackgroundService.SelectChoice(Context.UserIdentifier!, answerIndex);
     }

@@ -123,6 +123,15 @@ export class AppComponent {
       });
     });
 
+    this.hubConnection.on('EvaluateChoice', (isCorrect: boolean, answer: number) => {
+      if (isCorrect){
+        alert("Bonne réponse !")
+        this.nbRightAnswers++
+      } else {
+        alert("Mauvaise réponse ! La bonne réponse était " + answer)
+      }
+    })
+
     this.hubConnection
       .start()
       .then(() => {

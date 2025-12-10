@@ -1,15 +1,15 @@
 <div style="padding: 20px">
   <h1>Animation Angular</h1>
-  <button mat-raised-button color="accent">Animer une fois</button>
-  <button mat-raised-button color="accent">Animer en boucle</button>
-  <div class="square" style="background-color: red;"></div>
+  <button mat-raised-button color="accent" (click)="animateOnce()">Animer une fois</button>
+  <button mat-raised-button color="accent" (click)="animateLoop()">Animer en boucle</button>
+  <div class="square" style="background-color: red;" [@shake]="ngShake"></div>
 
-  <div class="square" style="background-color: green;"></div>
+  <div class="square" style="background-color: green;" [@bounce]="ngBounce"></div>
 
-  <div class="square" style="background-color: blue;"></div>
+  <div class="square" style="background-color: blue;" [@tada]="ngTada"></div>
 </div>
 <div style="padding: 20px">
   <h1>Animation CSS</h1>
-  <button mat-raised-button color="accent">Faire tourner</button>
-  <div class="square" style="background-color:orange;"></div>
+  <button mat-raised-button color="accent" (click)="turnSquare()" [disabled]="css_turn">Faire tourner</button>
+  <div class="square" style="background-color:orange;" [class.rotate-left]="css_turn"></div>
 </div>

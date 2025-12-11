@@ -3,6 +3,7 @@ using BackgroundServiceMath.Models;
 using BackgroundServiceVote.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BackgroundServiceMath.Services;
 
@@ -26,10 +27,13 @@ public class MathBackgroundService : BackgroundService
 
     private MathQuestionsService _mathQuestionsService;
 
-    public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, MathQuestionsService mathQuestionsService)
+    private IServiceScopeFactory _serviceScopeFactory;
+
+    public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, MathQuestionsService mathQuestionsService, IServiceScopeFactory serviceScopeFactory)
     {
         _mathQuestionHub = mathQuestionHub;
         _mathQuestionsService = mathQuestionsService;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public void AddUser(string userId)
@@ -66,6 +70,7 @@ public class MathBackgroundService : BackgroundService
         _currentQuestion.PlayerChoices[choice]++;
 
         // TODO: Notifier les clients qu'un joueur a choisi une réponse
+        await _mathQuestionHub.Clients.All.SendAsync("IncreasePlayersChoices", choice);
     }
 
     private async Task EvaluateChoices()
@@ -73,16 +78,29 @@ public class MathBackgroundService : BackgroundService
         // TODO: La méthode va avoir besoin d'un scope
         foreach (var userId in _data.Keys)
         {
-            var userData = _data[userId];
-            // TODO: Notifier les clients pour les bonnes et mauvaises réponses
-            // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
-            if (userData.Choice == _currentQuestion!.RightAnswerIndex)
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
+                BackgroundServiceContext dbContext = scope.ServiceProvider.GetRequiredService<BackgroundServiceContext>();
 
+                var userData = _data[userId];
+                // TODO: Notifier les clients pour les bonnes et mauvaises réponses
+                // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
+                if (userData.Choice == _currentQuestion!.RightAnswerIndex)
+                {
+                    var player = await dbContext.Player.FirstOrDefaultAsync(p => p.UserId == userId);
+                    if (player == null) return;
+
+                    player.NbRightAnswers++;
+                    await dbContext.SaveChangesAsync();
+                    await _mathQuestionHub.Clients.User(userId).SendAsync("EvaluateChoice", true);
+                }
+                else
+                {
+                    var answer = _currentQuestion.Answers[_currentQuestion.RightAnswerIndex];
+                    await _mathQuestionHub.Clients.User(userId).SendAsync("EvaluateChoice", false, answer);
+                }
             }
-            else
-            {
-            }
+           
 
         }
         // Reset
